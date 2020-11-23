@@ -1,0 +1,14 @@
+{
+	"id": "279e1f0c-fbe8-44c1-8bca-f596b012b969",
+	"name": "rob-environment",
+	"values": [
+		{
+			"key": "myid",
+			"value": "1",
+			"enabled": true
+		}
+	],
+	"_postman_variable_scope": "environment",
+	"_postman_exported_at": "2020-11-19T21:57:43.588Z",
+	"_postman_exported_using": "Postman/7.34.0"
+}

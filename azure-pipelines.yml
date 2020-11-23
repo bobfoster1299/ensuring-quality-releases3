@@ -1,0 +1,162 @@
+trigger:
+- master
+
+stages:
+- stage: Build
+  displayName: 'Build'
+  jobs:
+  - job: createStorageAccount
+    displayName: 'Create storage account for terraform state file'
+    pool:
+      vmImage: ubuntu-latest
+    steps:
+    - task: AzureCLI@2
+      displayName: 'Create storage account for terraform state file'
+      inputs:
+        azureSubscription: '$(azuresubscription)'
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          #! /bin/bash
+          az group create --location uksouth --name $(terraformstoragerg)
+          az storage account create --name $(terraformstorageaccount) --resource-group $(terraformstoragerg) --location uksouth --sku Standard_LRS
+          az storage container create --name terraform --account-name $(terraformstorageaccount)
+          az storage account keys list -g $(terraformstoragerg) -n $(terraformstorageaccount)
+  - job: getStorageKey
+    displayName: 'Build resources using terraform'
+    dependsOn: createStorageAccount
+    pool:
+      vmImage: windows-latest
+    steps:
+    - task: AzurePowerShell@5
+      displayName: 'Get storage account key'
+      inputs:
+        azureSubscription: '$(azuresubscription)'
+        ScriptType: InlineScript
+        azurePowerShellVersion: LatestVersion
+        Inline: |
+          $key=(Get-AzStorageAccountKey -ResourceGroupName $(terraformstoragerg) -AccountName $(terraformstorageaccount)).Value[0]
+          Write-Host "##vso[task.setvariable variable=storagekey]$key"
+    - task: qetza.replacetokens.replacetokens-task.replacetokens@3
+      displayName: 'Replace tokens in terraform files'
+      inputs:
+        targetFiles: |
+          **/*.tf
+          **/*.tfvars
+        escapeType: none
+        tokenPrefix: '__'
+        tokenSuffix: '__'        
+    - task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@0
+      displayName: 'Install Terraform'
+      inputs:
+        terraformVersion: 0.13.5
+    - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV1@0
+      displayName: 'Terraform : init'
+      inputs:
+        workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
+        backendServiceArm: '$(azuresubscription)'
+        backendAzureRmResourceGroupName: '$(terraformstoragerg)'
+        backendAzureRmStorageAccountName: '$(terraformstorageaccount)'
+        backendAzureRmContainerName: terraform
+        backendAzureRmKey: terraform.tfstate
+    - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV1@0
+      displayName: 'Terraform : plan'
+      inputs:
+        command: plan
+        workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
+        environmentServiceNameAzureRM: '$(azuresubscription)'
+    - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV1@0
+      displayName: 'Terraform : apply'
+      inputs:
+        command: apply
+        workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
+        commandOptions: '-auto-approve'
+        environmentServiceNameAzureRM: '$(azuresubscription)'
+        backendAzureRmResourceGroupName: '$(terraformstoragerg)'
+        backendAzureRmStorageAccountName: '$(terraformstorageaccount) '
+        backendAzureRmContainerName: terraform
+        backendAzureRmKey: '$(storagekey)'
+  - job: uploadPackage
+    displayName: 'Upload FakeRestAPI package'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: ArchiveFiles@2
+      displayName: 'Archive FakeRestAPI'
+      inputs:
+        rootFolderOrFile: '$(System.DefaultWorkingDirectory)/fakerestapi'
+        includeRootFolder: false
+        archiveType: 'zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId)-fakerestapi.zip'
+    - publish: $(Build.ArtifactStagingDirectory)/$(Build.BuildId)-fakerestapi.zip
+      displayName: 'Publish FakeRestAPIpackage'
+      artifact: drop-fakerestapi
+
+- stage: Deploy
+  displayName: 'Deploy'
+  jobs:
+  - deployment: deployApp
+    displayName: 'Deploy FakeRestAPI app to Azure'
+    pool:
+      vmImage: 'ubuntu-latest'
+    environment: '$(azureenvironment)'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: AzureWebApp@1
+            displayName: 'Deploy FakeRestAPI app to Azure'
+            inputs:
+              azureSubscription: '$(azuresubscription)'
+              appName: '$(appservice)'
+              appType: webApp
+              package: $(Pipeline.Workspace)/drop-fakerestapi/$(Build.BuildId)-fakerestapi.zip
+
+- stage: postDeployment
+  displayName: 'Post-Deployment'
+  jobs:
+  - job: runNewman
+    displayName: 'Run Newman/Postman data validation tests'
+    steps:
+    - script: |
+        newman run -e automatedtesting/postman/postman-vars.json automatedtesting/postman/postman.json --reporters cli,junit --reporter-junit-export $(Build.SourcesDirectory)/automatedtesting/postman/postman.xml
+        echo Newman tests run
+      displayName: 'Run Newman/Postman'
+    - task: PublishTestResults@2
+      inputs:
+        testResultsFormat: 'Junit'
+        testResultsFiles: '$(Build.SourcesDirectory)/automatedtesting/postman/*.xml'
+    
+  - job: publishSelenium
+    displayName: 'Publish Selenium'
+    steps:
+    - publish: $(System.DefaultWorkingDirectory)/automatedtesting/selenium/selenium-tests.py
+      artifact: seleniumFile
+  - deployment: seleniumOnVMDeploy
+    displayName: 'Install and run Selenium on VM'
+    dependsOn: publishSelenium
+    environment:
+      name:  '$(azureenvironment)'
+      resourceType: VirtualMachine
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: current
+            artifact: seleniumFile
+          - task: Bash@3
+            displayName: 'Run Selenium functional tests'
+            inputs:
+              targetType: 'inline'
+              script: |
+                #!/bin/bash             
+                sudo apt-get update -y
+                sudo apt-get install python3-pip -y
+                sudo apt-get install unzip -y
+                sudo apt-get install -y chromium-browser
+                sudo apt-get install -y chromium-chromedriver
+                pip3 install selenium
+                sudo mkdir -p /var/log/selenium
+                sudo chmod 777 /var/log/selenium
+                sudo python3 $(Pipeline.Workspace)/seleniumFile/selenium-tests.py 2>&1 | tee -a /var/log/selenium/selenium.log
+                sudo touch /var/log/selenium/selenium.log

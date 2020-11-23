@@ -1,0 +1,224 @@
+{
+	"info": {
+		"_postman_id": "e7641c44-82c0-440e-9118-2478bd92e5a0",
+		"name": "udacity-testing Copy",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Create employee",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "a9a28a4b-f43c-4b4e-ae96-b7a842a74c1a",
+						"exec": [
+							"pm.test(\"Create employee\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"Jimmy\");",
+							"});",
+							"var json = pm.response.json();",
+							"pm.environment.set(\"id\", json.data.id);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"Jimmy Johnson\",\n    \"salary\": \"17800\",\n    \"age\": \"39\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://dummy.restapiexample.com/api/v1/create",
+					"protocol": "http",
+					"host": [
+						"dummy",
+						"restapiexample",
+						"com"
+					],
+					"path": [
+						"api",
+						"v1",
+						"create"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get all employees",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "69ad3f6d-95f4-4960-9458-eb405a3c869c",
+						"exec": [
+							"pm.test(\"Get all employees\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"success\");",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://dummy.restapiexample.com/api/v1/employees",
+					"protocol": "http",
+					"host": [
+						"dummy",
+						"restapiexample",
+						"com"
+					],
+					"path": [
+						"api",
+						"v1",
+						"employees"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get employee by id",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "95b291c8-71da-4261-898c-95e1e863feb4",
+						"exec": [
+							"pm.test(\"Get employee by id\", function () {\r",
+							"    pm.expect(pm.response.text()).to.include(\"Tiger\");\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "file",
+					"file": {}
+				},
+				"url": {
+					"raw": "http://dummy.restapiexample.com/api/v1/employee/{{myid}}",
+					"protocol": "http",
+					"host": [
+						"dummy",
+						"restapiexample",
+						"com"
+					],
+					"path": [
+						"api",
+						"v1",
+						"employee",
+						"{{myid}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update employee by id",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "7a82baa2-2c8f-491e-9db7-fb0a1e8f094b",
+						"exec": [
+							"pm.test(\"Update employee by id\", function () {\r",
+							"    pm.expect(pm.response.text()).to.include(\"Twixon\");\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"id\": \"{{myid}}\",\r\n    \"employee_name\": \"Roberto Twixon\",\r\n    \"employee_salary\": 320800,\r\n    \"employee_age\": 62,\r\n    \"profile_image\": \"\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://dummy.restapiexample.com/api/v1/update/{{myid}}",
+					"protocol": "http",
+					"host": [
+						"dummy",
+						"restapiexample",
+						"com"
+					],
+					"path": [
+						"api",
+						"v1",
+						"update",
+						"{{myid}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete employee",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "e3c4fd89-94e8-4e25-a8c5-596347ae9b52",
+						"exec": [
+							"pm.test(\"Delete employee\", function () {\r",
+							"    pm.expect(pm.response.text()).to.include(\"deleted\");\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "http://dummy.restapiexample.com/api/v1/delete/{{myid}}",
+					"protocol": "http",
+					"host": [
+						"dummy",
+						"restapiexample",
+						"com"
+					],
+					"path": [
+						"api",
+						"v1",
+						"delete",
+						"{{myid}}"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}
