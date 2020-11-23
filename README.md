@@ -101,4 +101,4 @@ Give it a name and click **Done**. Tick the box **Apply below configuration to m
 
 Go back to the log analytics workspace > **Virtual Machines**. Click your VM > **Connect**. This will install the agent on the VM, allowing azure to collect logs from it.
 
-Go back to the log analytics workspace > **Logs**. From the **Custom Logs** dropdown double-click the custom log just created and run the query. You should see the selenium logs. However, the agent might only collect logs if the timestamp on the log file was updated after the agent was installed. Also, the BVM might require a reboot, or you might just need to wait a while, before the logs appear.
+Go back to the log analytics workspace > **Logs**. From the **Custom Logs** dropdown double-click the custom log just created and run the query. You should see the selenium logs. However, the agent might only collect logs if the timestamp on the log file was updated after the agent was installed. Also, the VM might require a reboot, or you might just need to wait a while, before the logs appear.
