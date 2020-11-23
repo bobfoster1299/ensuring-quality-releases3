@@ -4,7 +4,7 @@ trigger:
 stages:
 - stage: Build
   displayName: 'Build'
-  # jobs:
+  jobs:
   # - job: createStorageAccount
   #   displayName: 'Create storage account for terraform state file'
   #   pool:
