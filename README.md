@@ -62,11 +62,9 @@ Create a pipeline connected to github and select this repo. The [azure-pipelines
 * **terraformstorageaccount** - the name of the storage account for storing the terraform statefile.
 * **terraformstoragerg** - the name of the resource group for storing the terraform statefile (this is a different resource group to the one that will store the app service and VM).
 
-Run the pipeline. The first time it runs you may see an error *There was a resource authorization issue*. If so, click **Authorize Resources** and run the pipeline again.
-
-The first time the pipeline runs, it will fail on the seleniumOnVMDeploy deployment. This is because we need to manually configure the VM to allow the pipeline to connect to it. To do so, go to **Pipelines** > **Environments**. Click your environment > **Add Resource** > **Virtual Machines** > **Next**. Select linux operating system. Copy the registration script to the clipboard. Then SSH to the VM using your private key and public IP of the VM:
+Run the pipeline. On the first run it will fail on the seleniumOnVMDeploy deployment. This is because we need to manually configure the VM to allow the pipeline to connect to it. To do so, go to **Pipelines** > **Environments**. Click your environment > **Add Resource** > **Virtual Machines** > **Next**. Select **Linux** operating system. Copy the registration script to the clipboard. Then SSH to the VM using your private key and public IP of the VM:
 ```
-ssh -i robadmin@20.68.27.85
+ssh -i ~/path/to/privatekey robadmin@20.68.27.85
 ```
 Paste the registration script into the terminal (don't use sudo). Select N for tags, Y for unzip. The VM can now be managed by the pipeline. Re-run the failed job. The pipeline run should complete successfully. 
 
@@ -79,7 +77,7 @@ If you then visit the URL of the app service and try to go to a non-existent pag
 <br/>
 
 #### Set up log analytics
-Go to the app service > **Diagnostic Settings** > **Add Diagnostic Setting**. Tick **AppServiceHTTPLogs** and **Send to Log Analytics Workspace**. Select a workspace (can be an existing default workspace) > **Save**. Go back to the app service > **App Service Logs**. Turn on **Detailed Error Messages** and **Failed Request Tracing** > **Save**. Restart the app service. 
+Go to the app service > **Diagnostic Settings** > **+ Add Diagnostic Setting**. Tick **AppServiceHTTPLogs** and **Send to Log Analytics Workspace**. Select a workspace (can be an existing default workspace) > **Save**. Go back to the app service > **App Service Logs**. Turn on **Detailed Error Messages** and **Failed Request Tracing** > **Save**. Restart the app service. 
 
 Go to the log analytics workspace > **Logs**. Run the following query:
 ```  
@@ -92,12 +90,13 @@ This should show some log results (though it may take an hour or so before they 
 <br/>
 
 #### Set up custom logging
-In the log analytics workspace go to **Advanced Settings** > **Data** > **Custom Logs** > **Add** > **Choose File**. Select the file  **[selenium.log](automatedtesting/selenium/selenium.log)** > **Next** > **Next**. Put in the following paths as type Linux:
+In the log analytics workspace go to **Advanced Settings** > **Data** > **Custom Logs** > **Add +** > **Choose File**. Select the file  **[selenium.log](automatedtesting/selenium/selenium.log)** > **Next** > **Next**. Put in the following paths as type **Linux**:
 * /var/log/selenium/selenium.log
 * /var/log/selenium
 * /var/log/selenium/*.log
+
 Give it a name and click **Done**. Tick the box **Apply below configuration to my linux machines**.
 
 Go back to the log analytics workspace > **Virtual Machines**. Click your VM > **Connect**. This will install the agent on the VM, allowing azure to collect logs from it.
 
-Go back to the log analytics workspace > **Logs** > from the **Custom Logs** dropdown double-click the custom log just created and run the query. You should see the selenium logs (however, the agent might only collect logs if the timestamp on the log file was updated after the agent was installed).
+Go back to the log analytics workspace > **Logs**. From the **Custom Logs** dropdown double-click the custom log just created and run the query. You should see the selenium logs (however, the agent might only collect logs if the timestamp on the log file was updated after the agent was installed).
