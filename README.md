@@ -68,6 +68,8 @@ ssh -i ~/path/to/privatekey robadmin@20.68.27.85
 ```
 Paste the registration script into the terminal (don't use sudo). Select N for tags, Y for unzip. The VM can now be managed by the pipeline. Re-run the failed job. The pipeline run should complete successfully. 
 
+If the app service is not running properly, it may not have deployed correctly. Running the pipeline again may resolve this. 
+
 <br/>
 
 #### Set up email alerts
@@ -99,4 +101,4 @@ Give it a name and click **Done**. Tick the box **Apply below configuration to m
 
 Go back to the log analytics workspace > **Virtual Machines**. Click your VM > **Connect**. This will install the agent on the VM, allowing azure to collect logs from it.
 
-Go back to the log analytics workspace > **Logs**. From the **Custom Logs** dropdown double-click the custom log just created and run the query. You should see the selenium logs (however, the agent might only collect logs if the timestamp on the log file was updated after the agent was installed).
+Go back to the log analytics workspace > **Logs**. From the **Custom Logs** dropdown double-click the custom log just created and run the query. You should see the selenium logs. However, the agent might only collect logs if the timestamp on the log file was updated after the agent was installed. Also, the BVM might require a reboot, or you might just need to wait a while, before the logs appear.
